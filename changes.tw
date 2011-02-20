@@ -1,0 +1,29 @@
+== Version 0 ==
+
+=== Version 0.8 ===
+
+=== Version 0.8.1 ===
+
+* Adding QuickCheck tests.
+
+''Fill in missing versions''
+
+
+=== Version 0.3 ===
+
+* Commented out LANGUAGE pragmas and added OPTIONS_GHC -fglasgow-exts for ghc-6.6 compatibility.
+
+=== Version 0.2 ===
+
+* Fixed <hask>switcher</hask>.  Didn't terminate.  Thanks to Ivan Tomac for the bug report.
+
+=== Version 0.1 ===
+
+* Added <hask>Never</hask> constructor for Future.  Allows optimizations, including a huge improvement for <hask>(>>=)</hask> on <hask>Event</hask> (which had been piling up <hask>never</hask>s).
+* removed <code>-threaded</code> comment
+* added <hask>traceR</hask> (reactive value tracing)
+* use idler in <code>src/Examples.hs</code> (for single-threaded use of wxHaskell)
+
+=== Version 0.0 ===
+
+* New project.

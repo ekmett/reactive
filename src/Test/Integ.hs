@@ -1,0 +1,52 @@
+-- Simple test of recursive integrals, from Beelsebob
+
+import Control.Arrow (first)
+
+import Data.Max
+import Data.AddBounds
+import FRP.Reactive.Behavior
+import FRP.Reactive.PrimReactive
+import FRP.Reactive.Internal.Reactive
+import FRP.Reactive.Internal.Behavior
+import FRP.Reactive.Future
+import FRP.Reactive
+import FRP.Reactive.Improving
+
+
+-- For ticker
+import FRP.Reactive.Internal.Clock
+import FRP.Reactive.Internal.TVal
+import System.IO.Unsafe
+
+
+tick = atTimes [0,0.01 .. 2]
+it = integral tick
+
+ib = 1 + it ib :: Behavior Double
+e' = atTimes [0,0.1 .. 1.1]
+
+-- [(0.0,1.0),(0.1,1.1046221254112045),(0.2,1.2081089504435316),(0.30000000000000004,1.3345038765672335),(0.4000000000000001,1.4741225085031893),(0.5000000000000001,1.6283483384592894),(0.6000000000000001,1.7987096025387035),(0.7000000000000001,1.9868944241538458),(0.8,2.1947675417764927),(0.9,2.424388786780674),(1.0,2.67803349447676),(1.1,2.7048138294215276)]
+
+i1 = occs (ib `snapshot_` e')
+
+itst b = occs (it b `snapshot_` e')
+
+occs :: Event a -> [(TimeT, a)]
+occs = map (first (unNo . exact . getMax) . unFuture) . eFutures
+ where
+   unNo (NoBound a) = a
+
+-- [(0.0,0.0),(0.1,9.999999999999996e-2),(0.2,0.19),(0.30000000000000004,0.2900000000000001),(0.4000000000000001,0.3900000000000002),(0.5000000000000001,0.49000000000000027),(0.6000000000000001,0.5900000000000003),(0.7000000000000001,0.6900000000000004),(0.8,0.7900000000000005),(0.9,0.8900000000000006),(1.0,0.9900000000000007),(1.1,1.0000000000000007)]
+
+i2 = itst 1
+
+-- K 0.0 `Stepper` (1.0e-2,K 1.0e-2)->(2.0e-2,K 2.0e-2)->(3.0e-2,K 3.0e-2)->(3.9999999999999994e-2,K 3.9999999999999994e-2)->(4.999999999999999e-2,K 4.999999999999999e-2)->(5.9999999999999984e-2,K 5.9999999999999984e-2)->(6.999999999999998e-2,K 6.999999999999998e-2)->(7.999999999999997e-2,K 7.999999999999997e-2)->(8.999999999999997e-2,K 8.999999999999997e-2)->(9.999999999999996e-2,K 9.999999999999996e-2)->(0.10999999999999996,K 0.10999999999999996)->(0.11999999999999995,K 0.11999999999999995)->(0.12999999999999995,K 0.12999999999999995)->(0.13999999999999996,K 0.13999999999999996)->(0.14999999999999997,K 0.14999999999999997)->(0.15999999999999998,K 0.15999999999999998)->(0.16999999999999998,K 0.16999999999999998)->(0.18,K 0.18)->(0.19,K 0.19)->(0.2,K 0.2)-> ...
+
+r2 = unb (it 1)
+
+main = print i1
+
+-- Integration seems much slower than i'd expect it to be, even in the
+-- non-recursive case.  Recursive and non-recursive examples slow down as
+-- they go.
+

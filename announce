@@ -1,0 +1,9 @@
+Reactive [1] is a library for functional reactive programming (FRP), similar to the original Fran [2] but with a more modern interface (using standard type classes) and a hybrid push/pull implementation.  It is designed to be used in a variety of contexts, such as interactive 2D and 3D graphics, graphical user interfaces, web services, and automatic recompilation/re-execution.  It has a simple and precise semantics based on continuous time and is built on a notion of functional future values.  The semantics and implementation are described in the paper "Simply efficient functional reactivity" [3].
+
+Reactive now has a mailing list [4] and a feature/bug tracker [5].
+
+[1] http://haskell.org/haskellwiki/Reactive
+[2] http://conal.net/Fran
+[3] http://conal.net/papers/simply-reactive
+[4] http://www.haskell.org/mailman/listinfo/reactive
+[5] http://trac.haskell.org/reactive
