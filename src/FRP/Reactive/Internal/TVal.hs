@@ -25,7 +25,7 @@ import FRP.Reactive.Internal.Chan
 --import System.Mem.Weak (mkWeakPtr,deRefWeak)
 import System.IO.Unsafe (unsafePerformIO, unsafeInterleaveIO)
 
-import Data.Stream (Stream(..)) -- ,streamToList
+import Data.Stream.Infinite (Stream(..)) -- ,streamToList
 
 import Data.Unamb (unamb,assuming)
 
@@ -257,7 +257,7 @@ listSink mk = do -- putStrLn "listSink"
 
 -- | Variation on 'getChanContents', returning a stream instead of a
 -- list.  Note that 'getChanContents' only makes infinite lists.  I'm
--- hoping to get some extra laziness by using irrefutable 'Cons' pattern
+-- hoping to get some extra laziness by using irrefutable ':>' pattern
 -- when consuming the stream.
 getChanStream :: Chan a -> IO (Stream a)
 
@@ -268,9 +268,5 @@ getChanStream ch
   = unsafeInterleaveIO (do
         x  <- readChan ch
         xs <- getChanStream ch
-        return (Cons x xs)
+        return (x :> xs)
     )
-
-
-{-
--}

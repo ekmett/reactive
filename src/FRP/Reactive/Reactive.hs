@@ -37,8 +37,10 @@ module FRP.Reactive.Reactive
   , integral, sumR
     -- * Re-export
   , exact
+#ifdef TEST
     -- * Tests
   , batch
+#endif
   ) where
 
 import Control.Applicative
@@ -47,9 +49,11 @@ import Control.Monad
 import Data.Monoid
 import Debug.Trace (trace)
 
+#ifdef TEST
 -- import Test.QuickCheck
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes ()
+#endif
 
 -- vector-space
 import Data.VectorSpace
@@ -57,12 +61,21 @@ import Data.AffineSpace
 
 -- TypeCompose
 import Data.Zip (pairEdit)
+import Data.Semigroup (Max(..))
 
-import Data.Max
 import Data.AddBounds
-import FRP.Reactive.Future       hiding (batch)
-import FRP.Reactive.PrimReactive hiding (batch)
-import FRP.Reactive.Improving    hiding (batch)
+import FRP.Reactive.Future       
+#ifdef TEST
+  hiding (batch)
+#endif
+import FRP.Reactive.PrimReactive 
+#ifdef TEST
+  hiding (batch)
+#endif
+import FRP.Reactive.Improving    
+#ifdef TEST
+  hiding (batch)
+#endif
 
 -- -- | The type of finite time values
 -- type TimeFinite = Double
@@ -377,6 +390,7 @@ sumR :: (Ord t, Bounded t) => AdditiveGroup v => EventG t v -> ReactiveG t v
 sumR = scanlR (^+^) zeroV
 
 
+#ifdef TEST
 {----------------------------------------------------------
     Tests
 ----------------------------------------------------------}
@@ -388,3 +402,4 @@ batch = ( "FRP.Reactive.Reactive"
             -- Write some tests!
             ]
         )
+#endif

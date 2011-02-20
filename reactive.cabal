@@ -1,5 +1,5 @@
 Name:                reactive
-Version:             0.11.5
+Version:             0.12.0
 Synopsis:            Push-pull functional reactive programming
 Category:            reactivity, FRP
 Description:
@@ -42,17 +42,37 @@ License-File:        COPYING
 Stability:           provisional
 Build-Type:          Simple
 Extra-Source-Files:
+
+flag test
+  manual:  True
+  default: False
+  
 Library
-    Build-Depends:       base >=4 && <5, old-time, random, QuickCheck >= 2.1.0.2,
-                         TypeCompose>=0.8.0, vector-space>=0.5,
-                         unamb>=0.1.5, checkers >= 0.2.3,
-                         category-extras >= 0.53.5, Stream >= 0.3.1
+    Build-Depends:       
+      base >=4 && <5, 
+      data-default >= 0.2.0.1 && < 0.3,
+      old-time, 
+      random, 
+      TypeCompose>=0.8.0,
+      vector-space>=0.5,
+      unamb>=0.1.5,
+      pointed >= 0.1 && < 0.2,
+      comonad >= 1.0.1 && < 1.1,
+      semigroups >= 0.3.4.1 && < 0.4,
+      semigroupoids >= 1.1.1 && < 1.2,
+      streams >= 0.6.1.1 && < 0.7
+      
+    if flag(test)
+      build-depends: 
+        QuickCheck >= 2.1.0.2,
+        checkers >= 0.2.3
+
     -- This library uses the ImpredicativeTypes flag, and it depends
     -- on vector-space, which needs ghc >= 6.9
     if impl(ghc < 6.9) {
       buildable: False
     }
-    Hs-Source-Dirs:      src
+    Hs-Source-Dirs: src
     Exposed-Modules:     
         FRP.Reactive
 
@@ -77,12 +97,11 @@ Library
         FRP.Reactive.LegacyAdapters
 
         Data.AddBounds
-        Data.Min
-        Data.Max
         Data.PairMonad
         -- Probably eliminate the next few
         FRP.Reactive.Internal.IVar
         FRP.Reactive.Internal.Serial
         FRP.Reactive.Internal.TVal
 
-    ghc-options:         -Wall
+    ghc-options: -Wall
+    extensions:  CPP 

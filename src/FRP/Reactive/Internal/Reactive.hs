@@ -32,7 +32,7 @@ import Control.Concurrent (forkIO,ThreadId)
 
 import FRP.Reactive.Internal.Misc
 import FRP.Reactive.Internal.Future
-import Data.Max
+import Data.Semigroup (Max(..))
 -- import Data.AddBounds
 
 -- | Events.  Semantically: time-ordered list of future values.

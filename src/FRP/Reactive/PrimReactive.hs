@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, ScopedTypeVariables
+{-# LANGUAGE CPP, TypeOperators, ScopedTypeVariables
            , FlexibleInstances, MultiParamTypeClasses
            , GeneralizedNewtypeDeriving
  #-}
@@ -52,36 +52,45 @@ module FRP.Reactive.PrimReactive
   , eventOcc
     -- * To be moved elsewhere
   , joinMaybes, filterMP, result
+#ifdef TEST
   -- * To be removed when it gets used somewhere
   , isMonotoneR
   -- * Testing
   , batch, infE, monoid_E
   -- * Temporary exports, while debugging
   -- , snap, merge
+#endif
   ) where
 
 import Prelude hiding (zip,zipWith)
 
+import Data.Semigroup
 import Data.Monoid
+
 import Control.Applicative
 import Control.Arrow (first)
 import Control.Monad
-import Data.Function (on)
 -- import Debug.Trace (trace)
 
+
+import Data.Stream.Infinite (Stream(..))
+
+import Data.Pointed
+import Data.Copointed
+import Control.Comonad
+
+#ifdef TEST
 -- TODO: eliminate the needs for this stuff.
+import Data.Function (on)
 import Control.Concurrent (threadDelay)
 import Control.Exception (evaluate)
 import System.IO.Unsafe
-
-import Data.Stream (Stream(..))
-
-import Control.Comonad
-
 import Test.QuickCheck
 import Test.QuickCheck.Instances
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
+import Data.Unamb (race)  -- eliminate
+#endif
 -- import Data.List
 
 -- TypeCompose
@@ -91,13 +100,16 @@ import Control.Instances () -- Monoid (IO ())
 
 
 import Data.Unamb (unamb, assuming)
-import Data.Unamb (race)  -- eliminate
 
 -- import Data.Max
 -- import Data.AddBounds
-import FRP.Reactive.Future hiding (batch)
+import FRP.Reactive.Future 
+#ifdef TEST
+  hiding (batch)
+#endif
 import FRP.Reactive.Internal.Reactive
 
+#ifdef TEST
 {--------------------------------------------------------------------
     Events and reactive values
 --------------------------------------------------------------------}
@@ -153,6 +165,7 @@ instance (Ord t, Bounded t) => Model (ReactiveG t a) (t -> a) where
 instance (Ord t, Bounded t, Arbitrary t, Show t, EqProp a) => EqProp (ReactiveG t a)
  where
    (=-=) = (=-=) `on` model
+#endif
 
 -- Initial value of a 'Reactive'
 rInit :: ReactiveG t a -> a
@@ -173,7 +186,11 @@ instance (Ord t, Bounded t, Monoid a) => Monoid (ReactiveG t a) where
   mappend = liftA2 mappend
 
 -- | Merge two 'Future' reactives into one.
-merge :: (Ord t, Bounded t) => Binop (FutureG t (ReactiveG t a))
+merge 
+  :: (Ord t, Bounded t) 
+  => FutureG t (ReactiveG t a)
+  -> FutureG t (ReactiveG t a)
+  -> FutureG t (ReactiveG t a)
 
 -- The following two lines seem to be too strict and are causing
 -- reactive to lock up.  I.e. the time argument of one of these
@@ -206,6 +223,7 @@ u `merge` v =
 -- the left-bias, make sure u fragments are always the first argument
 -- to merge and v fragments are always the second.
 
+-- TODO: Apply & Bind instances
 
 -- Define functor instances in terms of each other.
 instance Functor (EventG t) where
@@ -542,7 +560,7 @@ futuresE (Future (t,a) : futs) =
 -- | Convert a temporally monotonic stream of futures to an event.  Like
 -- 'futuresE' but it can be lazier, because there's not empty case.
 futureStreamE :: (Ord t, Bounded t) => Stream (FutureG t a) -> EventG t a
-futureStreamE (~(Cons (Future (t,a)) futs)) =
+futureStreamE ~(Future (t,a) :> futs) =
   Event (Future (t, a `stepper` futureStreamE futs))
 
 -- | Event at given times.  See also 'atTimeG'.
@@ -659,7 +677,7 @@ Event (Future ~(ta, a `Stepper` e')) `untilET` t =
 
 -- I'm not sure about @<@ vs @<=@ above.
 
-
+#ifdef TEST
 -- | Sample a reactive value at a sequence of monotonically non-decreasing
 -- times.  Deprecated, because it does not reveal when value is known to
 -- be repeated in the output.  Those values won't be recomputed, but they
@@ -675,7 +693,7 @@ r@(a `Stepper` Event (Future (tr',r'))) `rats` ts@(t:ts')
 -- Just for testing
 rat :: (Ord t, Bounded t) => ReactiveG t a -> t -> a
 rat r = head . rats r . (:[])
-
+#endif
 
 {--------------------------------------------------------------------
     Other instances
@@ -708,17 +726,19 @@ instance Unzip (EventG t) where {fsts = fmap fst; snds = fmap snd}
 
 instance Copointed (EventG t) where
   -- E a -> F (R a) -> R a -> a
-  extract = extract . extract . eFuture
+  copoint = copoint . copoint . eFuture
 
 -- Here's the plan for 'duplicate':
 -- 
 --   E a -> F (R a) -> F (R (R a)) -> F (F (R (R a)))
 --       -> F (R (F (R a))) -> E (F (R a)) -> E (E a)
 
-
-instance Monoid t => Comonad (EventG t) where
+instance (Semigroup t, Monoid t) => Extend (EventG t) where
   duplicate =
     fmap Event . Event . fmap frTOrf . duplicate . fmap duplicate . eFuture
+
+instance (Semigroup t, Monoid t) => Comonad (EventG t) where
+  extract = extract . extract . eFuture
 
 -- This frTOrf definition type-checks.  Is it what we want?
 frTOrf :: FutureG t (ReactiveG t a) -> ReactiveG t (FutureG t a)
@@ -734,20 +754,23 @@ instance (Ord t, Bounded t) => Pointed (ReactiveG t) where
 -- constraint.  If so, remove Ord tr from 'time' in Behavior.
 
 instance Copointed (ReactiveG t) where
-  -- extract = extract . rat
-  -- Semantically: extract == extract . rat == (`rat` mempty) But mempty
+  -- copoint = copoint . rat
+  -- Semantically: copoint == copont . rat == (`rat` mempty) But mempty
   -- is the earliest time (since I'm using the Max monoid *), so here's a
   -- cheap alternative that also doesn't require Ord t:
-  extract (a `Stepper` _) = a
+  copoint (a `Stepper` _) = a
 
--- extract r == extract (rat r) == rat r mempty
+-- copoint r == copoint (rat r) == rat r mempty
 
 -- * Moreover, mempty is the earliest time in the Sum monoid on
 -- non-negative values, for relative-time behaviors.
 
-instance Monoid t => Comonad (ReactiveG t) where
+instance Semigroup t => Extend (ReactiveG t) where
   duplicate r@(_ `Stepper` Event u) =
     r `Stepper` Event (duplicate <$> u)
+  
+instance Semigroup t => Comonad (ReactiveG t) where
+  extract (a `Stepper` _) = a
 
 -- TODO: Prove the morphism law:
 -- 
@@ -788,6 +811,7 @@ result =  (.)
     Tests
 --------------------------------------------------------------------}
 
+#ifdef TEST
 -- TODO: Define more types like ApTy, use in batch below.  Move to checkers.
 type ApTy f a b = f (a -> b) -> f a -> f b
 
@@ -955,3 +979,4 @@ simulEventOrder n f =
 infE :: EventG NumT NumT
 infE = futuresE (zipWith future [1..] [1..]) 
 
+#endif

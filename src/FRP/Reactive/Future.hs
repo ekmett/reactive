@@ -51,19 +51,23 @@ module FRP.Reactive.Future
   , FutureG(..), isNeverF, inFuture, inFuture2, futTime, futVal, future
   , withTimeF
   -- * Tests
+#ifdef TEST
   , batch
+#endif
   ) where
 
 import Data.Monoid (Monoid(..))
+import Data.Semigroup (Semigroup(..), Max(..))
 
-import Data.Max
 -- import Data.AddBounds
 import FRP.Reactive.Internal.Future
 
+#ifdef TEST
 -- Testing
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
+#endif
 
 {----------------------------------------------------------
     Time and futures
@@ -73,11 +77,12 @@ import Test.QuickCheck.Classes
 ftime :: t -> Time t
 ftime = Max
 
+#ifdef TEST
 -- FutureG representation in Internal.Future
-
 instance (Bounded t, Eq t, EqProp t, EqProp a) => EqProp (FutureG t a) where
   u =-= v | isNeverF u && isNeverF v = property True
   Future a =-= Future b = a =-= b
+#endif
 
 -- I'd rather say:
 -- 
@@ -109,6 +114,10 @@ withTimeF = inFuture $ \ (t,a) -> (t,(t,a))
 -- other classes.  And don't use mempty and mappend for the operations
 -- below.  For one thing, the current instance makes Future a monoid but
 -- unFuture not be a monoid morphism.
+
+instance Ord t => Semigroup (FutureG t a) where
+  Future (s,a) <> Future (t,b) =
+    Future (s `min` t, if s <= t then a else b)
 
 instance (Ord t, Bounded t) => Monoid (FutureG t a) where
   mempty = Future (maxBound, error "Future mempty: it'll never happen, buddy")
@@ -151,20 +160,18 @@ instance (Ord t, Bounded t) => Monoid (FutureG t a) where
 
 -- Represents times at a given instant.
 newtype TimeInfo t = TimeInfo (Maybe t)
+#ifdef TEST
   deriving EqProp
+#endif
 
 instance Bounded t => Bounded (TimeInfo t) where
   minBound = TimeInfo (Just minBound)
   maxBound = TimeInfo Nothing
 
-
 -- A time at a given instant can be some unknown time in the future
 unknownTimeInFuture :: TimeInfo a
 unknownTimeInFuture = TimeInfo Nothing
 
--- or, a known time in the past. We're ignoring known future times for now.
-knownTimeInPast :: a -> TimeInfo a
-knownTimeInPast = TimeInfo . Just
 
 instance Eq a => Eq (TimeInfo a) where
   TimeInfo Nothing == TimeInfo Nothing = error "Cannot tell if two unknown times in the future are equal"
@@ -184,6 +191,14 @@ instance Ord a => Ord (TimeInfo a) where
   TimeInfo Nothing <= TimeInfo (Just _) = False
   TimeInfo (Just _) <= TimeInfo Nothing = True
   TimeInfo (Just a) <= TimeInfo (Just b) = a <= b
+
+#ifdef TEST
+-- or, a known time in the past. We're ignoring known future times for now.
+knownTimeInPast :: a -> TimeInfo a
+knownTimeInPast = TimeInfo . Just
+
+-- Move to checkers
+type BoundedT = Int
 
 batch :: TestBatch
 batch = ( "FRP.Reactive.Future"
@@ -218,7 +233,5 @@ batch = ( "FRP.Reactive.Future"
         kf = knownFuture
         knownFuture = future (knownTimeInPast t) a
         unknownFuture = future unknownTimeInFuture (error "cannot retrieve value at unknown time at the future")
+#endif
 
-
--- Move to checkers
-type BoundedT = Int

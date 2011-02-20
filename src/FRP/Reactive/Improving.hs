@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
+{-# LANGUAGE CPP, FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wall #-}
 ----------------------------------------------------------------------
 -- |
@@ -15,21 +15,26 @@
 module FRP.Reactive.Improving
   (
     Improving(..), exactly, before, after, minI, maxI
+#ifdef TEST
   , batch
+#endif
   ) where
 
 
-import Data.Function (on)
 import Text.Show.Functions ()
-import Control.Applicative (pure,(<$>),liftA2)
 
 import Data.Unamb (unamb,parCommute,pmin,pmax)
 
+import Control.Applicative (liftA2)
+#ifdef TEST
+import Control.Applicative (pure,(<$>))
+import Data.Function (on)
 import Test.QuickCheck
 -- import Test.QuickCheck.Instances
 import Test.QuickCheck.Checkers
 import Test.QuickCheck.Classes
 import Test.QuickCheck.Instances.Num
+#endif
 
 
 {----------------------------------------------------------
@@ -160,6 +165,18 @@ result :: (b -> b') -> ((a -> b) -> (a -> b'))
 result = (.)
 
 
+#ifdef TEST
+
+-- I didn't use nonNegative in genGE, because I want zero pretty often,
+-- especially for the antiSymmetric law.
+add :: Num a => Improving a -> a -> Improving a
+add (Imp x comp) dx = Imp (x + dx) (comp . subtract dx)
+
+minAL :: Ord a => a -> a -> Bool
+minAL x y = after  x `min` after  y >= exactly (x `min` y)
+
+maxAL :: Ord a => a -> a -> Bool
+maxAL x y = before x `max` before y <= exactly (x `max` y)
 ----
 
 -- For now, generate exactly-knowable values.
@@ -181,11 +198,6 @@ instance EqProp a => EqProp (Improving a) where
 genGE :: (Arbitrary a, Num a) => Improving a -> Gen (Improving a)
 genGE i = add i <$> oneof [pure 0, positive]
 
--- I didn't use nonNegative in genGE, because I want zero pretty often,
--- especially for the antiSymmetric law.
-
-add :: Num a => Improving a -> a -> Improving a
-add (Imp x comp) dx = Imp (x + dx) (comp . subtract dx)
 
 batch :: TestBatch
 batch = ( "Reactive.Improving"
@@ -202,14 +214,9 @@ partial = ( "Partial"
             , ("max before", property (maxAL :: NumT -> NumT -> Bool))
             ]
           )
+#endif
 
-minAL :: Ord a => a -> a -> Bool
-minAL x y = after  x `min` after  y >= exactly (x `min` y)
-
-maxAL :: Ord a => a -> a -> Bool
-maxAL x y = before x `max` before y <= exactly (x `max` y)
 
 
 -- Now I realize that the Ord laws are implied by semantic Ord property,
 -- assuming that the model satisfies the Ord laws.
-

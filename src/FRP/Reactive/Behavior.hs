@@ -29,7 +29,9 @@ import Data.Monoid (Monoid(..))
 import Control.Applicative (Applicative,(<$>),pure)
 -- import Control.Monad (join)
 
-import Control.Comonad
+import Data.Default
+
+import Data.Copointed
 
 import Control.Compose ((:.)(..),unO)
 
@@ -274,30 +276,10 @@ integral t b = sumB (snapshotWith (*^) b (diffE (time `snapshot_` t)))
 
 -- Orphan.  Move elsewhere
 
-instance (Functor g, Functor f, Copointed g, Copointed f)
-      => Copointed (g :. f) where
-  extract = extract . extract . unO
+instance (Copointed g, Copointed f) => Copointed (g :. f) where
+  copoint = copoint . copoint . unO
 
--- instance (Comonad g, Comonad f) => Comonad (g :. f) where
---   duplicate = inO (fmap duplicate . duplicate)
-
-
--- WORKING HERE
-
--- The plan for duplicate:
---
---   (g :. f) a -> g (f a) -> g (f (f a)) -> g (g (f (f a)))
---              -> g (f (g (f a))) -> (g :. f) (g (f a))
---              -> (g :. f) ((g :. f) a) -> 
-
--- But we'll have to do that middle twiddle, which I couldn't do for
--- behaviors to get a Monad either.  Is there another way?
-
-
--- instance Comonad (g :. f) where
---   duplicate 
-
-deriving instance (Monoid tr, Monoid tf) => Copointed (BehaviorG tr tf) 
+deriving instance (Monoid tr, Default tf) => Copointed (BehaviorG tr tf) 
 
 -- ITime and TimeT are not currently monoids.  They can be when I wrap
 -- them in the Sum monoid constructor, in which mempty = 0 and mappend =
@@ -328,10 +310,7 @@ deriving instance (Monoid tr, Monoid tf) => Copointed (BehaviorG tr tf)
 
 -- unb b :: R (T a)
 
-
-
 -- dup b :: B (B a)
-
 
 -- TODO: generalize to BehaviorG
 -- TODO: something about Monoid (Improving t)

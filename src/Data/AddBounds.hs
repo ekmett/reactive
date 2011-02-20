@@ -20,10 +20,11 @@ import Data.Unamb (unamb)
 
 import Data.AffineSpace
 
+#ifdef TEST
 -- Testing
 import Test.QuickCheck
 import Test.QuickCheck.Checkers
-
+#endif
 
 -- | Wrap a type into one having new least and greatest elements,
 -- preserving the existing ordering.
@@ -33,7 +34,6 @@ data AddBounds a = MinBound | NoBound a | MaxBound
 instance Bounded (AddBounds a) where
 	minBound = MinBound
 	maxBound = MaxBound
-
 
 -- Normally, I'd derive 'Ord' as well, but there's a sticky point.  The
 -- derived instance uses the default definition of 'min', which is uses
@@ -132,6 +132,7 @@ instance Ord a => Ord (AddBounds a) where
 --   coarbitrary (NoBound a) = variant 1 . coarbitrary a
 --   coarbitrary MaxBound    = variant 2
 
+#ifdef TEST
 instance Arbitrary a => Arbitrary (AddBounds a) where
   arbitrary = frequency [ (1 ,pure MinBound)
                         , (10, NoBound <$> arbitrary)
@@ -145,7 +146,7 @@ instance CoArbitrary a => CoArbitrary (AddBounds a) where
 instance (EqProp a, Eq a) => EqProp (AddBounds a) where
   NoBound a =-= NoBound b = a =-= b
   u =-= v = u `eq` v
-
+#endif
 
 -- Hm.  I'm dissatisfied with this next instance.  I'd like to tweak my
 -- type definitions to eliminate these partial definitions.
