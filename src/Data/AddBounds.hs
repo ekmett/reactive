@@ -14,13 +14,13 @@
 
 module Data.AddBounds (AddBounds(..)) where
 
-import Control.Applicative (pure,(<$>))
 
 import Data.Unamb (unamb)
 
 import Data.AffineSpace
 
 #ifdef TEST
+import Control.Applicative (pure,(<$>))
 -- Testing
 import Test.QuickCheck
 import Test.QuickCheck.Checkers

@@ -1,5 +1,5 @@
 Name:                reactive
-Version:             0.12.0
+Version:             0.12.2
 Synopsis:            Push-pull functional reactive programming
 Category:            reactivity, FRP
 Description:
@@ -56,11 +56,11 @@ Library
       TypeCompose>=0.8.0,
       vector-space>=0.5,
       unamb>=0.1.5,
-      pointed >= 0.1 && < 0.2,
-      comonad >= 1.0.1 && < 1.1,
-      semigroups >= 0.3.4.1 && < 0.4,
-      semigroupoids >= 1.1.1 && < 1.2,
-      streams >= 0.6.1.1 && < 0.7
+      pointed >= 0.1.3 && < 0.2,
+      comonad >= 1.1 && < 1.2,
+      semigroups >= 0.5 && < 0.6,
+      semigroupoids >= 1.2.2 && < 1.3,
+      streams >= 0.7.2 && < 0.8
       
     if flag(test)
       build-depends: 

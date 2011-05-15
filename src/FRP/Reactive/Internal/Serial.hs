@@ -22,13 +22,14 @@ module FRP.Reactive.Internal.Serial
 import Control.Concurrent.MVar
 import Control.Applicative((<$>))
 import Control.Exception (bracket_)
+import Unsafe.Coerce
 
 -- | Serializer.  Turns actions into equivalent but serialized actions
 type Serial = forall a. IO a -> IO a
 
 -- | Make a locking serializer
 makeSerial :: IO Serial
-makeSerial = locking <$> newEmptyMVar
+makeSerial = unsafeCoerce $ locking <$> newEmptyMVar 
 
 -- | Make a locking serializer with a given lock
 locking :: MVar () -> Serial

@@ -29,10 +29,10 @@ import Control.Comonad
 import FRP.Reactive.Internal.Misc (Sink)
 import Data.Semigroup (Max(..))
 import Data.PairMonad ()
-import Control.Comonad
 import Data.Functor.Bind
 
 #ifdef TEST
+import Control.Comonad
 import Test.QuickCheck
 #endif
 
